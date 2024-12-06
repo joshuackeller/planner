@@ -79,7 +79,7 @@ export default function App({ Component, pageProps }: AppProps) {
     return (
       <AppContext.Provider value={{ db, day }}>
         <Component {...pageProps} />
-        <div className="fixed mx-3 bottom-3 w-[calc(100vw-24px)] flex justify-between items-center rounded-xl p-3 bg-zinc-900/10">
+        <div className="fixed mx-3 bottom-3 w-[calc(100vw-24px)] flex justify-between items-center rounded-xl py-3 px-4 bg-zinc-900/10">
           <div className="bg-white rounded-md p-1">
             {["days", "weeks", "months", "year"].map((period) => (
               <button
@@ -88,7 +88,9 @@ export default function App({ Component, pageProps }: AppProps) {
                   "inline-flex items-center capitalize rounded-md h-8 px-3 py-2 text-xs font-medium transition",
                   period === selectedPeriod && "bg-black text-white"
                 )}
-                onClick={() => router.push(`/${period}`)}
+                onClick={() =>
+                  router.push(`/${period}`, undefined, { scroll: false })
+                }
               >
                 {period}
               </button>
