@@ -4,5 +4,5 @@ import { AppContext } from "./_app";
 
 export default function Home() {
   const { day } = useContext(AppContext);
-  return <DatesWithTasksList period="days" day={day} />;
+  return <DatesWithTasksList period="weeks" day={day} />;
 }
