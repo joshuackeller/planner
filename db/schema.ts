@@ -6,7 +6,7 @@ const generateId = (): string => {
   return nanoid();
 };
 
-export const user = sqliteTable("user", {
+export const users = sqliteTable("user", {
   id: text("id")
     .primaryKey()
     .default(generateId as any),
