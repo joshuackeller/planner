@@ -241,7 +241,7 @@ export class DB {
   }
 }
 
-const generateId = () => {
+export const generateId = () => {
   const nanoid = customAlphabet("23456789ABCDEFGHIJKMNPQRSTUVWXYZ", 10);
   return nanoid();
 };

@@ -81,27 +81,24 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
                   <div
                     className={cn(
                       "p-3 w-44 rounded-xl flex flex-col justify-between",
-                      samePeriod ? "bg-indigo-100" : "bg-zinc-100"
+                      samePeriod ? "bg-primary" : "bg-secondary"
                     )}
                   >
                     <div className="flex justify-between">
                       <div>
-                        <h6>{DateTitle(dateWithTasks.date, period)}</h6>
-                        {period === "days" && (
-                          <h6
-                            className={cn(
-                              "-mt-2",
-                              samePeriod ? "text-indigo-700" : "text-zinc-400"
-                            )}
-                          >
-                            {format(dateWithTasks.date, "EEE")}
-                          </h6>
-                        )}
+                        <h6 className={cn(samePeriod && "text-white")}>
+                          {DateTitle(dateWithTasks.date, period)}
+                        </h6>
                       </div>
                       <div className="mt-1">
                         <DropdownMenu>
                           <DropdownMenuTrigger>
-                            <EllipsisVerticalIcon className="size-5" />
+                            <EllipsisVerticalIcon
+                              className={cn(
+                                "size-5",
+                                samePeriod && "text-white"
+                              )}
+                            />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
@@ -134,12 +131,7 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
                       </div>
                     </div>
                     <div>
-                      <p
-                        className={cn(
-                          "text-sm",
-                          samePeriod ? "text-indigo-700" : "text-zinc-700"
-                        )}
-                      >
+                      <p className={cn("text-sm", samePeriod && "text-white")}>
                         {dateWithTasks.tasks.reduce(
                           (total, task) => total + (task.complete ? 1 : 0),
                           0
@@ -212,7 +204,7 @@ const BuildDatesWithTasks = (
 
 const DateTitle = (date: Date, period: Period): string => {
   if (period === "days") {
-    return `${format(date, "MMM d")}`;
+    return `${format(date, "EEE MMM d")}`;
   } else if (period === "weeks") {
     let end = addDays(date, 6);
     if (!isSameMonth(date, end)) {
