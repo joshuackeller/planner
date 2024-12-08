@@ -38,6 +38,9 @@ const Auth = () => {
       const res = await fetch("/api/sign-in", {
         method: "POST",
         body: JSON.stringify(values),
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
       const data = await res.json();
       if (!data.token) {

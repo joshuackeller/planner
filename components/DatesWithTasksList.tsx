@@ -28,7 +28,7 @@ import {
 import CreateModal from "./CreateModal";
 import TaskList from "./TaskList";
 import { AppContext } from "@/pages/_app";
-import { DB, Period, Task } from "@/src/DB";
+import { LocalDB, Period, Task } from "@/src/LocalDB";
 
 const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
   const { db } = useContext(AppContext);
@@ -37,10 +37,9 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
 
   const [createDay, setCreateDay] = useState<Date | null>(null);
 
-  const [datesWithTasks, setDatesWithTasks] = useState<DateWithTasks[]>(
-    BuildDatesWithTasks(day, period, db)
-  );
-  const refresh = () => setDatesWithTasks(BuildDatesWithTasks(day, period, db));
+  const [datesWithTasks, setDatesWithTasks] = useState<DateWithTasks[]>();
+  const refresh = async () =>
+    setDatesWithTasks(await BuildDatesWithTasks(day, period, db));
   useEffect(() => {
     refresh();
     setTimeout(() => {
@@ -68,7 +67,7 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
       />
       <div className="p-3">
         <div className="space-y-3">
-          {datesWithTasks.map((dateWithTasks) => {
+          {datesWithTasks?.map((dateWithTasks) => {
             const samePeriod = isSamePeriod(dateWithTasks.date, period);
             return (
               <div
@@ -174,11 +173,11 @@ export default DatesWithTasksList;
 
 type DateWithTasks = { date: Date; tasks: Task[] };
 
-const BuildDatesWithTasks = (
+const BuildDatesWithTasks = async (
   day: Date,
   period: Period,
-  db: DB
-): DateWithTasks[] => {
+  db: LocalDB
+): Promise<DateWithTasks[]> => {
   let dates: Date[] = [];
 
   if (period === "days") {
@@ -196,10 +195,12 @@ const BuildDatesWithTasks = (
     dates = [startOfYear(day)];
   }
 
-  return dates.map((date) => ({
-    date,
-    tasks: db.list(date, period),
-  }));
+  return await Promise.all(
+    dates.map(async (date) => ({
+      date,
+      tasks: await db.list(date, period),
+    }))
+  );
 };
 
 const DateTitle = (date: Date, period: Period): string => {

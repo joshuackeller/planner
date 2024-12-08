@@ -21,7 +21,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Period, Task } from "@/src/DB";
+import { Period, Task } from "@/src/LocalDB";
 import { AppContext } from "@/pages/_app";
 
 const TaskList = ({
@@ -52,7 +52,7 @@ const TaskList = ({
         const [task] = _tasks.splice(oldIndex, 1);
         _tasks.splice(newIndex, 0, task);
         db.updateOrder(
-          task.date,
+          new Date(task.date),
           period,
           _tasks.map(({ id }) => id)
         );

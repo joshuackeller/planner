@@ -1,4 +1,4 @@
-import { Period } from "@/src/DB";
+import { Period } from "@/src/LocalDB";
 import { clsx, type ClassValue } from "clsx";
 import {
   isSameDay,
@@ -11,6 +11,7 @@ import {
   startOfYear,
 } from "date-fns";
 import { twMerge } from "tailwind-merge";
+import { customAlphabet } from "nanoid";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,4 +43,12 @@ export const isSamePeriod = (date: Date, period: Period): boolean => {
   } else {
     return false;
   }
+};
+
+export const createTaskDBUrl = (userId: string) =>
+  `libsql://${userId}-${process.env.TURSO_PLATFORM_API_TOKEN}.turso.io`;
+
+export const generateId = (): string => {
+  const nanoid = customAlphabet("23456789abcdefghijkmnopqrstuvwxyz", 12);
+  return nanoid();
 };

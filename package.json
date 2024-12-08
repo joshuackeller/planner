@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:user:generate": "drizzle-kit generate --config drizzle.config.user.ts",
+    "db:user:migrate": "drizzle-kit migrate --config drizzle.config.user.ts",
+    "db:user:studio": "drizzle-kit studio --config drizzle.config.user.ts",
+    "db:task-parent:generate": "drizzle-kit generate --config drizzle.config.task-parent.ts",
+    "db:task-parent:migrate": "drizzle-kit migrate --config drizzle.config.task-parent.ts",
+    "db:task-parent:studio": "drizzle-kit studio --config drizzle.config.task-parent.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -24,6 +27,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.2",
+    "@tursodatabase/api": "^1.9.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

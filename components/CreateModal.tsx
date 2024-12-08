@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Period } from "@/src/DB";
+import { Period } from "@/src/LocalDB";
 import { AppContext } from "@/pages/_app";
 
 const CreateModal = ({

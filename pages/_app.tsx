@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { createContext, useEffect, useState } from "react";
-import { DB, Period, runSQLite } from "../src/DB";
+import { LocalDB, Period, runSQLite } from "../src/LocalDB";
 import {
   addMonths,
   addWeeks,
@@ -26,7 +26,7 @@ import Auth, { AUTH_KEY } from "@/components/Auth";
 import Head from "next/head";
 import { Toaster } from "@/components/ui/toaster";
 
-export const AppContext = createContext<{ db: DB; day: Date }>({} as any);
+export const AppContext = createContext<{ db: LocalDB; day: Date }>({} as any);
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function App({ Component, pageProps }: AppProps) {
     : "days";
 
   const [day, setDay] = useState<Date>(new Date());
-  const [db, setDb] = useState<DB>();
+  const [db, setDb] = useState<LocalDB>();
   const [calOpen, setCalOpen] = useState<boolean>(false);
 
   const [token, setToken] = useState<string | null>("");

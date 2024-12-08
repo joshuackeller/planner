@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users } from "@/db/schema.user";
 import { eq } from "drizzle-orm";
 
 type Data =
@@ -17,7 +17,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const { email, password } = JSON.parse(req.body);
+  const { email, password } = req.body;
 
   const queryResults = await db
     .select()
