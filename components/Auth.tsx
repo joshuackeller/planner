@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/router";
+import { useState } from "react";
 
 export const AUTH_KEY = "AUTH_TOKEN";
 
@@ -24,6 +25,7 @@ const formSchema = z.object({
 const Auth = () => {
   const { toast } = useToast();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,6 +36,7 @@ const Auth = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/sign-in", {
         method: "POST",
@@ -59,6 +62,7 @@ const Auth = () => {
         description: "Make sure you're using the correct email and password.",
       });
     }
+    setIsLoading(false);
   };
 
   return (
@@ -97,7 +101,9 @@ const Auth = () => {
               )}
             />
             <div className="flex justify-end">
-              <Button type="submit">Sign In</Button>
+              <Button type="submit" disabled={isLoading}>
+                Sign In
+              </Button>
             </div>
           </form>
         </Form>
