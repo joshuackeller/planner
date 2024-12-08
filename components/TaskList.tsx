@@ -31,7 +31,7 @@ const TaskList = ({
 }: {
   tasks: Task[];
   period: Period;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }) => {
   const { db } = useContext(AppContext);
   const sensors = useSensors(
@@ -41,7 +41,7 @@ const TaskList = ({
     })
   );
 
-  const onDragEnd = (e: DragEndEvent) => {
+  const onDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e;
     if (!!active && !!over) {
       const _tasks = [...tasks];
@@ -51,12 +51,12 @@ const TaskList = ({
       if (oldIndex !== newIndex) {
         const [task] = _tasks.splice(oldIndex, 1);
         _tasks.splice(newIndex, 0, task);
-        db.updateOrder(
+        await db.updateOrder(
           new Date(task.date),
           period,
           _tasks.map(({ id }) => id)
         );
-        refresh();
+        await refresh();
       }
     }
   };
@@ -78,7 +78,13 @@ const TaskList = ({
   );
 };
 
-const TaskItem = ({ task, refresh }: { task: Task; refresh: () => void }) => {
+const TaskItem = ({
+  task,
+  refresh,
+}: {
+  task: Task;
+  refresh: () => Promise<void>;
+}) => {
   const { db } = useContext(AppContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id });
@@ -97,13 +103,9 @@ const TaskItem = ({ task, refresh }: { task: Task; refresh: () => void }) => {
               id={task.id}
               checked={task.complete}
               onClick={(e) => e.stopPropagation()} // Stop event from propagating
-              onCheckedChange={(val) => {
-                if (val) {
-                  db.markComplete(task.id);
-                } else {
-                  db.markIncomplete(task.id);
-                }
-                refresh();
+              onCheckedChange={async (val) => {
+                await db.update({ id: task.id, complete: val ? true : false });
+                await refresh();
               }}
             />
             <div
@@ -118,9 +120,9 @@ const TaskItem = ({ task, refresh }: { task: Task; refresh: () => void }) => {
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem
-            onClick={() => {
-              db.delete(task.id);
-              refresh();
+            onClick={async () => {
+              await db.delete(task.id);
+              await refresh();
             }}
             className="text-red-500"
           >

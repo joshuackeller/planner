@@ -40,6 +40,7 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
   const [datesWithTasks, setDatesWithTasks] = useState<DateWithTasks[]>();
   const refresh = async () =>
     setDatesWithTasks(await BuildDatesWithTasks(day, period, db));
+
   useEffect(() => {
     refresh();
     setTimeout(() => {
@@ -107,9 +108,12 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
                               Add Task
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => {
-                                db.copyIncompletes(dateWithTasks.date, period);
-                                refresh();
+                              onClick={async () => {
+                                await db.copyIncompletes(
+                                  dateWithTasks.date,
+                                  period
+                                );
+                                await refresh();
                               }}
                             >
                               <CornerDownRightIcon />
@@ -117,9 +121,12 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="!text-red-500"
-                              onClick={() => {
-                                db.clearPeriod(dateWithTasks.date, period);
-                                refresh();
+                              onClick={async () => {
+                                await db.clearPeriod(
+                                  dateWithTasks.date,
+                                  period
+                                );
+                                await refresh();
                               }}
                             >
                               <XIcon />

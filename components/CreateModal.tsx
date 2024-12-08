@@ -23,12 +23,12 @@ const CreateModal = ({
   day: Date | null;
   setDay: (day: Date | null) => void;
   period: Period;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }) => {
   const { db } = useContext(AppContext);
 
   const [name, setName] = useState<string>("");
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!day) return;
     if (!name) {
@@ -39,8 +39,8 @@ const CreateModal = ({
       });
       return;
     }
-    db.create(name, day, period);
-    refresh();
+    await db.create(name, day, period);
+    await refresh();
     setDay(null);
     setName("");
   };
