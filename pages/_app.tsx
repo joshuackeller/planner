@@ -109,7 +109,9 @@ export default function App({ Component, pageProps }: AppProps) {
                     period === selectedPeriod && "bg-black text-white"
                   )}
                   onClick={() =>
-                    router.push(`/${period}`, undefined, { scroll: false })
+                    router.push(`/${period}`, undefined, {
+                      scroll: false,
+                    })
                   }
                 >
                   {period}

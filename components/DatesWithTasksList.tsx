@@ -55,7 +55,7 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
         } else {
         }
       }
-    }, 50);
+    }, 10);
   }, [day, period]);
 
   return (
