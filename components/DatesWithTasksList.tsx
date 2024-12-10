@@ -28,7 +28,7 @@ import {
 import CreateModal from "./CreateModal";
 import TaskList from "./TaskList";
 import { AppContext } from "@/pages/_app";
-import { LocalDB, Period, Task } from "@/src/LocalDB";
+import { LocalDB, Period, Task } from "@/lib/LocalDB";
 
 const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
   const { db } = useContext(AppContext);
@@ -57,6 +57,25 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
       }
     }, 10);
   }, [day, period]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      console.log(e.key, !!createDay);
+      if (!createDay && e.key === "Enter") {
+        e.preventDefault();
+        setCreateDay(day);
+      }
+      if (!!createDay && e.key === "Esc") {
+        setCreateDay(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [createDay]);
 
   return (
     <>

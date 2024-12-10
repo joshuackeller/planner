@@ -1,4 +1,4 @@
-import { Period } from "@/src/LocalDB";
+import { Period } from "@/lib/LocalDB";
 import { clsx, type ClassValue } from "clsx";
 import {
   isSameDay,

@@ -36,33 +36,35 @@ const Auth = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/sign-in", {
-        method: "POST",
-        body: JSON.stringify(values),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-      if (!data.token) {
-        throw Error("No token");
-      } else {
-        localStorage.setItem(AUTH_KEY, data.token);
-        toast({
-          title: "Sign In Successful!",
+    if (!isLoading) {
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/sign-in", {
+          method: "POST",
+          body: JSON.stringify(values),
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        router.reload();
+        const data = await res.json();
+        if (!data.token) {
+          throw Error("No token");
+        } else {
+          localStorage.setItem(AUTH_KEY, data.token);
+          toast({
+            title: "Sign In Successful!",
+          });
+          router.reload();
+        }
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Could Not Sign In",
+          description: "Make sure you're using the correct email and password.",
+        });
       }
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Could Not Sign In",
-        description: "Make sure you're using the correct email and password.",
-      });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

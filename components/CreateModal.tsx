@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Period } from "@/src/LocalDB";
+import { Period } from "@/lib/LocalDB";
 import { AppContext } from "@/pages/_app";
 
 const CreateModal = ({
@@ -73,7 +73,9 @@ const CreateModal = ({
             />
           </div>
           <DialogFooter className="mt-4">
-            <Button type="submit">Create</Button>
+            <Button type="submit" disabled={name === ""}>
+              Create
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

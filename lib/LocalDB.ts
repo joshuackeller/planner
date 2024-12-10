@@ -147,6 +147,7 @@ export class LocalDB {
       })
       .where(eq(tasks.id, id))
       .returning();
+    this.save();
 
     return data;
   }

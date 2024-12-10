@@ -2,7 +2,7 @@ import type { Config } from "drizzle-kit";
 
 export default {
   schema: "./db/schema.user.ts",
-  out: "./migrations-user",
+  out: "./db/migrations-user",
   dialect: "turso",
   dbCredentials: {
     url: process.env.TURSO_USER_DATABASE_URL!,

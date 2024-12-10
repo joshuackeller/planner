@@ -21,7 +21,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Period, Task } from "@/src/LocalDB";
+import { Period, Task } from "@/lib/LocalDB";
 import { AppContext } from "@/pages/_app";
 
 const TaskList = ({

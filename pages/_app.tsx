@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { createContext, useEffect, useState } from "react";
-import { LocalDB, Period, runSQLite } from "../src/LocalDB";
+import { LocalDB, Period, runSQLite } from "../lib/LocalDB";
 import {
   addMonths,
   addWeeks,
