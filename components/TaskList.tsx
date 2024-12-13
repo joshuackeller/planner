@@ -28,10 +28,12 @@ const TaskList = ({
   tasks,
   period,
   refresh,
+  onClickEdit,
 }: {
   tasks: Task[];
   period: Period;
   refresh: () => Promise<void>;
+  onClickEdit: (task: Task) => void;
 }) => {
   const { db } = useContext(AppContext);
   const sensors = useSensors(
@@ -62,28 +64,36 @@ const TaskList = ({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onDragEnd}
-    >
-      <SortableContext items={tasks.map(({ id }) => id)}>
-        {tasks.map((task) => (
-          <div key={task.id}>
-            <TaskItem task={task} refresh={refresh} />
-          </div>
-        ))}
-      </SortableContext>
-    </DndContext>
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext items={tasks.map(({ id }) => id)}>
+          {tasks.map((task) => (
+            <div key={task.id}>
+              <TaskItem
+                task={task}
+                refresh={refresh}
+                onClickEdit={onClickEdit}
+              />
+            </div>
+          ))}
+        </SortableContext>
+      </DndContext>
+    </>
   );
 };
 
 const TaskItem = ({
   task,
   refresh,
+  onClickEdit,
 }: {
   task: Task;
   refresh: () => Promise<void>;
+  onClickEdit: (task: Task) => void;
 }) => {
   const { db } = useContext(AppContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -119,6 +129,12 @@ const TaskItem = ({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
+          <ContextMenuItem
+            onClick={() => onClickEdit(task)}
+            className="flex justify-between"
+          >
+            Edit
+          </ContextMenuItem>
           <ContextMenuItem
             onClick={async () => {
               await db.delete(task.id);

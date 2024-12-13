@@ -11,7 +11,7 @@ import {
   startOfWeek,
   startOfYear,
 } from "date-fns";
-import { useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   CheckIcon,
@@ -29,13 +29,17 @@ import CreateModal from "./CreateModal";
 import TaskList from "./TaskList";
 import { AppContext } from "@/pages/_app";
 import { LocalDB, Period, Task } from "@/lib/LocalDB";
+import EditModal from "./EditModal";
 
-const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
+export const CalendarContext = createContext<{}>({});
+
+const CalendarScreen = ({ day, period }: { day: Date; period: Period }) => {
   const { db } = useContext(AppContext);
 
   const todayRef = useRef<HTMLDivElement>(null);
 
   const [createDay, setCreateDay] = useState<Date | null>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
 
   const [datesWithTasks, setDatesWithTasks] = useState<DateWithTasks[]>();
   const refresh = async () =>
@@ -60,13 +64,16 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      console.log(e.key, !!createDay);
-      if (!createDay && e.key === "Enter") {
+      if (!editTask && !createDay && e.key === "Enter") {
         e.preventDefault();
         setCreateDay(day);
       }
-      if (!!createDay && e.key === "Esc") {
-        setCreateDay(null);
+      if (e.key === "Esc") {
+        if (!!editTask) {
+          setEditTask(null);
+        } else if (!!createDay) {
+          setCreateDay(null);
+        }
       }
     };
 
@@ -75,16 +82,17 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [createDay]);
+  }, [createDay, editTask]);
 
   return (
-    <>
+    <CalendarContext.Provider value={{}}>
       <CreateModal
         day={createDay}
         setDay={setCreateDay}
         refresh={refresh}
         period={period}
       />
+      <EditModal task={editTask} setTask={setEditTask} refresh={refresh} />
       <div className="p-3">
         <div className="space-y-3">
           {datesWithTasks?.map((dateWithTasks) => {
@@ -171,6 +179,7 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
                         tasks={dateWithTasks.tasks}
                         refresh={refresh}
                         period={period}
+                        onClickEdit={(task) => setEditTask(task)}
                       />
                     </div>
                     <div>
@@ -191,11 +200,11 @@ const DatesWithTasksList = ({ day, period }: { day: Date; period: Period }) => {
         </div>
         <div className="h-[calc(100vh-310px)]" />
       </div>
-    </>
+    </CalendarContext.Provider>
   );
 };
 
-export default DatesWithTasksList;
+export default CalendarScreen;
 
 type DateWithTasks = { date: Date; tasks: Task[] };
 

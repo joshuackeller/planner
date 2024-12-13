@@ -1,8 +1,8 @@
-import DatesWithTasksList from "@/components/DatesWithTasksList";
+import CalendarScreen from "@/components/CalendarScreen";
 import { useContext } from "react";
 import { AppContext } from "./_app";
 
 export default function Home() {
   const { day } = useContext(AppContext);
-  return <DatesWithTasksList period="weeks" day={day} />;
+  return <CalendarScreen period="weeks" day={day} />;
 }
