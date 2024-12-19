@@ -39,7 +39,7 @@ const CreateModal = ({
       });
       return;
     }
-    await db.create(name, day, period);
+    await db.create({ name, period, date: day });
     await refresh();
     setDay(null);
     setName("");

@@ -1,0 +1,1 @@
+ALTER TABLE `task` ALTER COLUMN "updated" TO "updated" integer NOT NULL;

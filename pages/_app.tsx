@@ -1,13 +1,18 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { createContext, useEffect, useState } from "react";
-import { LocalDB, Period, runSQLite } from "../lib/LocalDB";
+import { LocalDB, Period, runSQLite, Task } from "../lib/LocalDB";
 import {
+  addDays,
   addMonths,
   addWeeks,
   addYears,
+  differenceInCalendarWeeks,
+  endOfMonth,
   format,
+  startOfMonth,
   startOfWeek,
+  startOfYear,
   subMonths,
   subWeeks,
   subYears,
@@ -26,7 +31,12 @@ import Auth, { AUTH_KEY } from "@/components/Auth";
 import Head from "next/head";
 import { Toaster } from "@/components/ui/toaster";
 
-export const AppContext = createContext<{ db: LocalDB; day: Date }>({} as any);
+export const AppContext = createContext<{
+  db: LocalDB;
+  day: Date;
+  datesWithTasks: DateWithTasks[];
+  refresh: () => Promise<void>;
+}>({} as any);
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -38,8 +48,17 @@ export default function App({ Component, pageProps }: AppProps) {
     ? "weeks"
     : "days";
 
+  // CONTEXT VALUES
   const [day, setDay] = useState<Date>(new Date());
   const [db, setDb] = useState<LocalDB>();
+  const [datesWithTasks, setDatesWithTasks] = useState<DateWithTasks[]>([]);
+  const refresh = async () =>
+    setDatesWithTasks(await BuildDatesWithTasks(day, selectedPeriod, db));
+
+  useEffect(() => {
+    refresh();
+  }, [day, selectedPeriod]);
+
   const [calOpen, setCalOpen] = useState<boolean>(false);
 
   const [token, setToken] = useState<string | null>("");
@@ -51,10 +70,23 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   useEffect(() => {
-    if (token) {
+    if (!!token) {
       runSQLite(setDb);
     }
   }, [token]);
+
+  useEffect(() => {
+    const sync = async () => {
+      if (!db) return;
+      await db.sync();
+      await refresh();
+    };
+
+    if (!!token && !!db) {
+      console.log("RUNNING SYNC");
+      sync();
+    }
+  }, [token, db]);
 
   const handlePrevious = () => {
     if (selectedPeriod === "days") {
@@ -97,7 +129,7 @@ export default function App({ Component, pageProps }: AppProps) {
           <h1 className="animate-pulse">Loading data...</h1>
         </div>
       ) : (
-        <AppContext.Provider value={{ db, day }}>
+        <AppContext.Provider value={{ db, day, datesWithTasks, refresh }}>
           <Component {...pageProps} />
           <div className="fixed mx-3 bottom-3 w-[calc(100vw-24px)] flex justify-between items-center rounded-xl py-3 px-4 bg-zinc-900/10">
             <div className="bg-white rounded-md p-1">
@@ -194,4 +226,37 @@ const NextText = (date: Date, period: Period): string => {
   } else {
     return "Invalid Date";
   }
+};
+
+type DateWithTasks = { date: Date; tasks: Task[] };
+
+const BuildDatesWithTasks = async (
+  day: Date,
+  period: Period,
+  db?: LocalDB
+): Promise<DateWithTasks[]> => {
+  if (!db) return [];
+  let dates: Date[] = [];
+
+  if (period === "days") {
+    const startOfTheWeek = startOfWeek(day, { weekStartsOn: 0 });
+    dates = Array.from({ length: 7 }, (_, i) => addDays(startOfTheWeek, i));
+  } else if (period === "weeks") {
+    const startMonth = startOfMonth(day);
+    const endMonth = endOfMonth(day);
+    const numWeeks = differenceInCalendarWeeks(endMonth, startMonth) + 1;
+    dates = Array.from({ length: numWeeks }, (_, i) => addWeeks(startMonth, i));
+  } else if (period === "months") {
+    const startOfYearDate = startOfYear(day);
+    dates = Array.from({ length: 12 }, (_, i) => addMonths(startOfYearDate, i));
+  } else if (period === "year") {
+    dates = [startOfYear(day)];
+  }
+
+  return await Promise.all(
+    dates.map(async (date) => ({
+      date,
+      tasks: await db.list(date, period),
+    }))
+  );
 };

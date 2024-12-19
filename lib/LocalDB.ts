@@ -1,6 +1,7 @@
-import { generateId, startOfPeriod } from "@/lib/utils";
+import { generateId, isoShortDate, startOfPeriod } from "@/lib/utils";
 import {
   endOfDay,
+  parseISO,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -12,8 +13,9 @@ import {
 } from "date-fns";
 import initSqlJs, { Database } from "sql.js";
 import { drizzle, SQLJsDatabase } from "drizzle-orm/sql-js";
-import { tasks } from "@/db/schema.task-parent";
-import { and, between, eq } from "drizzle-orm";
+import { tasks as taskSchema } from "@/db/schema.task-parent";
+import { and, between, desc, eq } from "drizzle-orm";
+import { AUTH_KEY } from "@/components/Auth";
 
 const DB_KEY = "PLANNER_SQLITE";
 
@@ -26,7 +28,7 @@ export const runSQLite = async (setDb: (db: LocalDB) => void) => {
   setDb(new LocalDB(SQL));
 };
 
-export type Task = typeof tasks.$inferSelect;
+export type Task = typeof taskSchema.$inferSelect;
 
 export type Period = "days" | "weeks" | "months" | "year";
 
@@ -42,16 +44,17 @@ export class LocalDB {
       this.db = drizzle(this.sqlite);
     } else {
       this.sqlite = new SQL.Database();
+      this.sqlite.run(`
+                      CREATE TABLE task (
+                        id TEXT UNIQUE,
+                        name TEXT,
+                        complete BOOLEAN,
+                        sort_order INTEGER DEFAULT 0,
+                        period TEXT,
+                        date TEXT,
+                        updated INTEGER);
+                        `);
       this.db = drizzle(this.sqlite);
-      this.db.run(`
-                    CREATE TABLE task (
-                      id TEXT UNIQUE,
-                      name TEXT,
-                      complete BOOLEAN,
-                      sort_order INTEGER DEFAULT 0,
-                      period TEXT,
-                      date TEXT);
-                     `);
     }
   }
 
@@ -67,17 +70,19 @@ export class LocalDB {
     if (day) {
       const start = period ? startOfPeriod(day, period) : startOfDay(day);
       const end = endOfDay(start);
-      where.push(between(tasks.date, start.toISOString(), end.toISOString()));
+      where.push(
+        between(taskSchema.date, isoShortDate(start), isoShortDate(end))
+      );
     }
     if (period) {
-      where.push(eq(tasks.period, period));
+      where.push(eq(taskSchema.period, period));
     }
 
     const data = await this.db
       .select()
-      .from(tasks)
+      .from(taskSchema)
       .where(where.length > 0 ? and(...where) : undefined)
-      .orderBy(tasks.sort_order);
+      .orderBy(taskSchema.sort_order);
 
     return data;
   }
@@ -85,8 +90,8 @@ export class LocalDB {
   async read(id: string): Promise<Task | null> {
     const data = await this.db
       .select()
-      .from(tasks)
-      .where(eq(tasks.id, id))
+      .from(taskSchema)
+      .where(eq(taskSchema.id, id))
       .limit(1);
 
     if (data.length === 0) {
@@ -104,20 +109,27 @@ export class LocalDB {
     return task;
   }
 
-  async create(name: string, day: Date, period: Period): Promise<Task> {
-    const id = generateId();
-    const currentTasks = await this.list(day);
-    const date = startOfPeriod(day, period);
+  async create(task: {
+    id?: string;
+    name: string;
+    complete?: boolean;
+    sort_order?: number;
+    period: Period;
+    date: Date;
+    updated?: number;
+  }): Promise<Task> {
+    const currentTasks = await this.list(task.date);
 
     const [data] = await this.db
-      .insert(tasks)
+      .insert(taskSchema)
       .values({
-        id,
-        name,
-        complete: false,
-        sort_order: currentTasks.length + 1,
-        period,
-        date: date.toISOString(),
+        id: task.id || generateId(),
+        name: task.name,
+        complete: typeof task.complete === "boolean" ? task.complete : false,
+        sort_order: task.sort_order || currentTasks.length + 1,
+        period: task.period,
+        date: isoShortDate(startOfPeriod(task.date, task.period)),
+        updated: task.updated || Date.now(),
       })
       .returning();
     this.save();
@@ -125,54 +137,51 @@ export class LocalDB {
     return data;
   }
 
-  async update({
-    id,
-    name,
-    complete,
-    sort_order,
-  }: {
+  async update(task: {
     id: string;
     name?: string;
     complete?: boolean;
     sort_order?: number;
+    updated?: number;
   }): Promise<Task> {
-    await this.checkExists(id);
+    const cur = await this.checkExists(task.id);
 
+    if (!task.updated) {
+      if (typeof task.name === "string" && task.name !== cur.name) {
+        task.updated = Date.now();
+      } else if (
+        typeof task.complete === "boolean" &&
+        task.complete !== cur.complete
+      ) {
+        task.updated = Date.now();
+      } else if (
+        typeof task.sort_order === "number" &&
+        task.sort_order !== cur.sort_order
+      ) {
+        task.updated = Date.now();
+      }
+    }
     const [data] = await this.db
-      .update(tasks)
-      .set({
-        name,
-        complete,
-        sort_order,
-      })
-      .where(eq(tasks.id, id))
+      .update(taskSchema)
+      .set(task)
+      .where(eq(taskSchema.id, task.id))
       .returning();
     this.save();
 
     return data;
-  }
-
-  async markComplete(id: string): Promise<Task> {
-    await this.checkExists(id);
-    return await this.update({ id, complete: true });
-  }
-
-  async markIncomplete(id: string): Promise<Task> {
-    await this.checkExists(id);
-    return await this.update({ id, complete: false });
   }
 
   async delete(id: string) {
     const taskToBeDeleted = await this.checkExists(id);
 
-    await this.db.delete(tasks).where(eq(tasks.id, id));
+    await this.db.delete(taskSchema).where(eq(taskSchema.id, id));
 
     const data = await this.list(
-      new Date(taskToBeDeleted.date),
+      parseISO(taskToBeDeleted.date),
       taskToBeDeleted.period as Period
     );
     this.updateOrder(
-      new Date(taskToBeDeleted.date),
+      parseISO(taskToBeDeleted.date),
       taskToBeDeleted.period as Period,
       data.filter(({ id }) => taskToBeDeleted.id !== id).map(({ id }) => id)
     );
@@ -190,17 +199,19 @@ export class LocalDB {
     const incompletes = previous.filter((task) => !task.complete);
 
     for (const task of incompletes) {
-      await this.create(task.name, day, period);
+      await this.create({ name: task.name, period, date: day });
     }
     this.save();
   }
 
   async clearPeriod(day: Date, period: Period) {
-    const start = startOfDay(day).toISOString();
-    const end = endOfDay(day).toISOString();
+    const start = isoShortDate(startOfDay(day));
+    const end = isoShortDate(endOfDay(day));
     await this.db
-      .delete(tasks)
-      .where(and(between(tasks.date, start, end), eq(tasks.period, period)));
+      .delete(taskSchema)
+      .where(
+        and(between(taskSchema.date, start, end), eq(taskSchema.period, period))
+      );
     this.save();
   }
 
@@ -208,19 +219,59 @@ export class LocalDB {
     const tasks = await this.list(day, period);
     const taskIdsForDay = new Set(tasks.map((task) => task.id));
 
-    orderedIds.forEach((id, index) => {
+    for (const id of orderedIds) {
       if (!taskIdsForDay.has(id)) {
         throw new Error(
           `Task with id ${id} does not exist for the specified day.`
         );
       }
+    }
 
-      this.sqlite.run("UPDATE task SET sort_order = ? WHERE id = ?", [
-        index,
-        id,
-      ]);
-    });
+    await Promise.all(
+      orderedIds.map((id, index) => this.update({ id, sort_order: index }))
+    );
 
     this.save();
+  }
+
+  async sync() {
+    const token = localStorage.getItem(AUTH_KEY);
+    if (!token) return;
+
+    const params = new URLSearchParams();
+    const results = await this.db
+      .select()
+      .from(taskSchema)
+      .orderBy(desc(taskSchema.updated))
+      .limit(1);
+    if (results.length > 0) {
+      params.append("updated", results[0].updated.toString());
+    }
+
+    try {
+      const response = await fetch(`/api/tasks?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      const tasks: Task[] = await response.json();
+
+      for (const task of tasks) {
+        const existing_task = await this.read(task.id);
+        if (!existing_task) {
+          await this.create({
+            ...task,
+            period: task.period as Period,
+            date: parseISO(task.date),
+          });
+        } else {
+          await this.update(task);
+        }
+      }
+    } catch (error) {
+      console.error("COULD NOT SYNC", error);
+    }
   }
 }

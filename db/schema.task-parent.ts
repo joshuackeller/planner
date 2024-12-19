@@ -7,4 +7,5 @@ export const tasks = sqliteTable("task", {
   sort_order: integer("sort_order").notNull().default(0),
   period: text("period").notNull(),
   date: text("date").notNull(),
+  updated: integer("updated").notNull(),
 });

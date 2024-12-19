@@ -1,6 +1,7 @@
 import { Period } from "@/lib/LocalDB";
 import { clsx, type ClassValue } from "clsx";
 import {
+  formatISO,
   isSameDay,
   isSameMonth,
   isSameWeek,
@@ -52,3 +53,6 @@ export const generateId = (): string => {
   const nanoid = customAlphabet("23456789abcdefghijkmnopqrstuvwxyz", 12);
   return nanoid();
 };
+
+export const isoShortDate = (date: Date) =>
+  formatISO(date, { representation: "date" });
