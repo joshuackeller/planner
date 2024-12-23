@@ -232,6 +232,12 @@ const TaskItem = ({
             Edit
           </ContextMenuItem>
           <ContextMenuItem
+            onClick={() => navigator.clipboard.writeText(task.name)}
+            className="flex justify-between"
+          >
+            Copy
+          </ContextMenuItem>
+          <ContextMenuItem
             onClick={async () => {
               await db.delete(task.id);
               await refresh();
