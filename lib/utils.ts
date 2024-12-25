@@ -1,4 +1,3 @@
-import { Period } from "@/lib/LocalDB";
 import { clsx, type ClassValue } from "clsx";
 import {
   formatISO,
@@ -13,6 +12,7 @@ import {
 } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { customAlphabet } from "nanoid";
+import { Period } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

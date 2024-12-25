@@ -3,8 +3,8 @@ import { useContext, useEffect, useState } from "react";
 import CreateModal from "./CreateModal";
 import TaskList from "./TaskList";
 import { AppContext } from "@/pages/_app";
-import { Period, Task } from "@/lib/LocalDB";
 import EditModal from "./EditModal";
+import { Period, Task } from "@/lib/types";
 
 const CalendarScreen = ({ day, period }: { day: Date; period: Period }) => {
   const { datesWithTasks, refresh } = useContext(AppContext);

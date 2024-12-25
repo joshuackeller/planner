@@ -16,8 +16,10 @@ import { drizzle, SQLJsDatabase } from "drizzle-orm/sql-js";
 import { tasks as taskSchema } from "@/db/schema.task-parent";
 import { and, between, desc, eq } from "drizzle-orm";
 import { AUTH_KEY } from "@/components/Auth";
+import { Period, QueueUpdateRecord, Task } from "./types";
 
 const DB_KEY = "PLANNER_SQLITE";
+const QUEUE_UPDATES_KEY = "UPDATES_QUEUE";
 
 export const runSQLite = async (setDb: (db: LocalDB) => void) => {
   const SQL = await initSqlJs({
@@ -27,10 +29,6 @@ export const runSQLite = async (setDb: (db: LocalDB) => void) => {
 
   setDb(new LocalDB(SQL));
 };
-
-export type Task = typeof taskSchema.$inferSelect;
-
-export type Period = "days" | "weeks" | "months" | "year";
 
 export class LocalDB {
   sqlite: Database;
@@ -63,6 +61,14 @@ export class LocalDB {
       DB_KEY,
       JSON.stringify(Array.from(this.sqlite.export()))
     );
+  }
+
+  addToQueue(update: QueueUpdateRecord) {
+    const updates: QueueUpdateRecord[] = JSON.parse(
+      localStorage.getItem(QUEUE_UPDATES_KEY) || "[]"
+    );
+    updates.push(update);
+    localStorage.setItem(QUEUE_UPDATES_KEY, JSON.stringify(updates));
   }
 
   async list(day?: Date, period?: Period): Promise<Task[]> {
@@ -120,19 +126,18 @@ export class LocalDB {
   }): Promise<Task> {
     const currentTasks = await this.list(task.date);
 
-    const [data] = await this.db
-      .insert(taskSchema)
-      .values({
-        id: task.id || generateId(),
-        name: task.name,
-        complete: typeof task.complete === "boolean" ? task.complete : false,
-        sort_order: task.sort_order || currentTasks.length + 1,
-        period: task.period,
-        date: isoShortDate(startOfPeriod(task.date, task.period)),
-        updated: task.updated || Date.now(),
-      })
-      .returning();
+    const values = {
+      id: task.id || generateId(),
+      name: task.name,
+      complete: typeof task.complete === "boolean" ? task.complete : false,
+      sort_order: task.sort_order || currentTasks.length + 1,
+      period: task.period,
+      date: isoShortDate(startOfPeriod(task.date, task.period)),
+      updated: task.updated || Date.now(),
+    };
+    const [data] = await this.db.insert(taskSchema).values(values).returning();
     this.save();
+    this.addToQueue({ id: values.id, data: values, type: "update" });
 
     return data;
   }
@@ -167,6 +172,7 @@ export class LocalDB {
       .where(eq(taskSchema.id, task.id))
       .returning();
     this.save();
+    this.addToQueue({ id: task.id, data: task, type: "update" });
 
     return data;
   }
@@ -175,6 +181,7 @@ export class LocalDB {
     const taskToBeDeleted = await this.checkExists(id);
 
     await this.db.delete(taskSchema).where(eq(taskSchema.id, id));
+    this.addToQueue({ id, type: "delete" });
 
     const data = await this.list(
       parseISO(taskToBeDeleted.date),
@@ -205,13 +212,10 @@ export class LocalDB {
   }
 
   async clearPeriod(day: Date, period: Period) {
-    const start = isoShortDate(startOfDay(day));
-    const end = isoShortDate(endOfDay(day));
-    await this.db
-      .delete(taskSchema)
-      .where(
-        and(between(taskSchema.date, start, end), eq(taskSchema.period, period))
-      );
+    const tasks = await this.list(day, period);
+    for (const task of tasks) {
+      await this.delete(task.id);
+    }
     this.save();
   }
 
@@ -234,7 +238,7 @@ export class LocalDB {
     this.save();
   }
 
-  async sync() {
+  async syncPull() {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
 
@@ -266,12 +270,37 @@ export class LocalDB {
             period: task.period as Period,
             date: parseISO(task.date),
           });
-        } else {
+        } else if (task.updated > existing_task.updated) {
           await this.update(task);
         }
       }
     } catch (error) {
-      console.error("COULD NOT SYNC", error);
+      console.error("COULD NOT PULL", error);
+    }
+  }
+
+  async syncPush() {
+    const token = localStorage.getItem(AUTH_KEY);
+    if (!token) return;
+
+    const updates: QueueUpdateRecord[] = JSON.parse(
+      localStorage.getItem(QUEUE_UPDATES_KEY) || "[]"
+    );
+    localStorage.removeItem(QUEUE_UPDATES_KEY);
+
+    for (const update of updates) {
+      try {
+        await fetch(`/api/tasks/sync`, {
+          method: "POST",
+          body: JSON.stringify(update),
+          headers: {
+            authorization: token,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        console.error("COULD NOT PUSH RECORD", error);
+      }
     }
   }
 }

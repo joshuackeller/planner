@@ -1,5 +1,4 @@
 import { FormEvent, useContext, useEffect, useState } from "react";
-import { Task } from "@/lib/LocalDB";
 import { AppContext } from "@/pages/_app";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,6 +12,7 @@ import {
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Task } from "@/lib/types";
 
 const EditModal = ({
   task,

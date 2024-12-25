@@ -38,7 +38,7 @@ export default async function handler(
     .limit(1);
 
   // User with email already exists
-  if (queryResults.length === 1) {
+  if (queryResults.length >= 1) {
     return res.status(400).json({ error: "Error creating account" });
   }
 

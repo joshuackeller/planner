@@ -21,7 +21,6 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Period, Task } from "@/lib/LocalDB";
 import { AppContext } from "@/pages/_app";
 import { Button } from "./ui/button";
 import { cn, isSamePeriod } from "@/lib/utils";
@@ -38,6 +37,7 @@ import {
   EllipsisVerticalIcon,
   XIcon,
 } from "lucide-react";
+import { Period, Task } from "@/lib/types";
 
 const TaskList = ({
   date,

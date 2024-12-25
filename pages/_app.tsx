@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { createContext, useEffect, useState } from "react";
-import { LocalDB, Period, runSQLite, Task } from "../lib/LocalDB";
+import { LocalDB, runSQLite } from "../lib/LocalDB";
 import {
   addDays,
   addMonths,
@@ -30,6 +30,7 @@ import { useRouter } from "next/router";
 import Auth, { AUTH_KEY } from "@/components/Auth";
 import Head from "next/head";
 import { Toaster } from "@/components/ui/toaster";
+import { Period, Task } from "@/lib/types";
 
 export const AppContext = createContext<{
   db: LocalDB;
@@ -78,14 +79,27 @@ export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     const sync = async () => {
       if (!db) return;
-      await db.sync();
+      await db.syncPull();
       await refresh();
     };
 
     if (!!token && !!db) {
-      console.log("RUNNING SYNC");
+      console.log("RUNNING PULL");
       sync();
     }
+  }, [token, db]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (!!token && !!db) {
+      interval = setInterval(() => {
+        console.log("RUNNING PUSH");
+        db.syncPush();
+      }, 10000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [token, db]);
 
   const handlePrevious = () => {
