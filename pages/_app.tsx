@@ -95,7 +95,7 @@ export default function App({ Component, pageProps }: AppProps) {
       interval = setInterval(() => {
         console.log("RUNNING PUSH");
         db.syncPush();
-      }, 10000);
+      }, 2000);
     }
     return () => {
       if (interval) clearInterval(interval);
