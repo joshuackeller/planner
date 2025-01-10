@@ -163,7 +163,7 @@ const TaskList = ({
               </SortableContext>
             </DndContext>
           </div>
-          <div>
+          <div className="mt-2">
             <Button
               size="sm"
               variant="secondary"
