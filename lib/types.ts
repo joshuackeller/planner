@@ -1,6 +1,6 @@
-import { tasks as taskSchema } from "@/db/schema.task-parent";
+import { tasksTable } from "@/db/schema.sqlite";
 
-export type Task = typeof taskSchema.$inferSelect;
+export type Task = typeof tasksTable.$inferSelect;
 
 export type Period = "days" | "weeks" | "months" | "year";
 

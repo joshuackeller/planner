@@ -1,17 +1,23 @@
-import { tasks as taskSchema } from "@/db/schema.task-parent";
+import { db } from "@/db";
+import { tasksTable } from "@/db/schema.postgres";
 import { AuthenticatedRequest, withAuthentication } from "@/lib/authenticate";
-import { gt } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import type { NextApiResponse } from "next";
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  const { db } = req.user;
+  const userId = req.userId;
   const { updated } = req.query;
 
-  const query = db.select().from(taskSchema);
+  const where = [eq(tasksTable.userId, userId)];
+
   if (updated !== undefined && typeof updated === "string") {
-    query.where(gt(taskSchema.updated, parseInt(updated)));
+    where.push(gt(tasksTable.updated, parseInt(updated)));
   }
-  const tasks = await query;
+
+  const tasks = await db
+    .select()
+    .from(tasksTable)
+    .where(and(...where));
 
   return res.status(200).json(tasks);
 };

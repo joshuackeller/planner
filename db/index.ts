@@ -1,24 +1,15 @@
-import { drizzle } from "drizzle-orm/libsql";
-import { Client, createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool } from "@neondatabase/serverless";
 
-let tursoClient: Client;
-let dbInstance;
-
-if (!globalThis._tursoClient) {
-  tursoClient = createClient({
-    url: process.env.TURSO_USER_DATABASE_URL!,
-    authToken: process.env.TURSO_USER_AUTH_TOKEN,
-  });
-  globalThis._tursoClient = tursoClient; // Store in global object
-} else {
-  tursoClient = globalThis._tursoClient;
+declare global {
+  var _dbPool: Pool | undefined;
 }
 
-if (!globalThis._dbInstance) {
-  dbInstance = drizzle(tursoClient);
-  globalThis._dbInstance = dbInstance; // Store in global object
-} else {
-  dbInstance = globalThis._dbInstance;
+const pool =
+  global._dbPool || new Pool({ connectionString: process.env.DATABASE_URL! });
+
+if (global._dbPool) {
+  global._dbPool = pool;
 }
 
-export const db = dbInstance;
+export const db = drizzle(pool);

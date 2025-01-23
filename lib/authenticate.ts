@@ -1,12 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
-import { createClient } from "@libsql/client";
-import { drizzle, LibSQLDatabase } from "drizzle-orm/libsql";
 
 export interface AuthenticatedRequest extends NextApiRequest {
-  user: {
-    db: LibSQLDatabase;
-  };
+  userId: string;
 }
 
 export const withAuthentication =
@@ -22,17 +18,8 @@ export const withAuthentication =
       if (!tokenData.userId)
         return res.status(401).json({ error: "Invalid auth token" });
 
-      const url = `libsql://${tokenData.userId}-${process.env.TURSO_ORGANIZATION_SLUG}.turso.io`;
-
       try {
-        const client = createClient({
-          url,
-          authToken: process.env.TURSO_TASK_GROUP_AUTH_TOKEN,
-        });
-
-        (req as AuthenticatedRequest).user = {
-          db: drizzle(client),
-        };
+        (req as AuthenticatedRequest).userId = tokenData.userId;
       } catch (error) {
         return res
           .status(500)

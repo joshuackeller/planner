@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import initSqlJs, { Database } from "sql.js";
 import { drizzle, SQLJsDatabase } from "drizzle-orm/sql-js";
-import { tasks as taskSchema } from "@/db/schema.task-parent";
+import { tasksTable } from "@/db/schema.sqlite";
 import { and, between, desc, eq } from "drizzle-orm";
 import { AUTH_KEY } from "@/components/Auth";
 import { Period, QueueUpdateRecord, Task } from "./types";
@@ -77,18 +77,18 @@ export class LocalDB {
       const start = period ? startOfPeriod(day, period) : startOfDay(day);
       const end = endOfDay(start);
       where.push(
-        between(taskSchema.date, isoShortDate(start), isoShortDate(end))
+        between(tasksTable.date, isoShortDate(start), isoShortDate(end))
       );
     }
     if (period) {
-      where.push(eq(taskSchema.period, period));
+      where.push(eq(tasksTable.period, period));
     }
 
     const data = await this.db
       .select()
-      .from(taskSchema)
+      .from(tasksTable)
       .where(where.length > 0 ? and(...where) : undefined)
-      .orderBy(taskSchema.sort_order);
+      .orderBy(tasksTable.sort_order);
 
     return data;
   }
@@ -96,8 +96,8 @@ export class LocalDB {
   async read(id: string): Promise<Task | null> {
     const data = await this.db
       .select()
-      .from(taskSchema)
-      .where(eq(taskSchema.id, id))
+      .from(tasksTable)
+      .where(eq(tasksTable.id, id))
       .limit(1);
 
     if (data.length === 0) {
@@ -135,7 +135,7 @@ export class LocalDB {
       date: isoShortDate(startOfPeriod(task.date, task.period)),
       updated: task.updated || Date.now(),
     };
-    const [data] = await this.db.insert(taskSchema).values(values).returning();
+    const [data] = await this.db.insert(tasksTable).values(values).returning();
     this.save();
     this.addToQueue({ id: values.id, data: values, type: "update" });
 
@@ -167,9 +167,9 @@ export class LocalDB {
       }
     }
     const [data] = await this.db
-      .update(taskSchema)
+      .update(tasksTable)
       .set(task)
-      .where(eq(taskSchema.id, task.id))
+      .where(eq(tasksTable.id, task.id))
       .returning();
     this.save();
     this.addToQueue({ id: task.id, data: task, type: "update" });
@@ -180,7 +180,7 @@ export class LocalDB {
   async delete(id: string) {
     const taskToBeDeleted = await this.checkExists(id);
 
-    await this.db.delete(taskSchema).where(eq(taskSchema.id, id));
+    await this.db.delete(tasksTable).where(eq(tasksTable.id, id));
     this.addToQueue({ id, type: "delete" });
 
     const data = await this.list(
@@ -245,8 +245,8 @@ export class LocalDB {
     const params = new URLSearchParams();
     const results = await this.db
       .select()
-      .from(taskSchema)
-      .orderBy(desc(taskSchema.updated))
+      .from(tasksTable)
+      .orderBy(desc(tasksTable.updated))
       .limit(1);
     if (results.length > 0) {
       params.append("updated", results[0].updated.toString());

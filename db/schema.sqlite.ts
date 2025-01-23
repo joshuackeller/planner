@@ -1,6 +1,6 @@
 import { text, sqliteTable, integer } from "drizzle-orm/sqlite-core";
 
-export const tasks = sqliteTable("task", {
+export const tasksTable = sqliteTable("task", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   complete: integer("complete", { mode: "boolean" }).notNull().default(false),
