@@ -5,17 +5,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { usersTable } from "@/db/schema.postgres";
 
-type Data =
-  | {
-      token: string;
-    }
-  | {
-      error: string;
-    };
-
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse
 ) {
   try {
     const { email, password } = req.body;
@@ -38,7 +30,7 @@ export default async function handler(
       return res.status(401).send({ error: "Error signing in" });
     } else {
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
-      return res.status(200).json({ token });
+      return res.status(200).json({ token, userId: user.id });
     }
   } catch (error) {
     console.log("ERROR", error);

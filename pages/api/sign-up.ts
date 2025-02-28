@@ -13,18 +13,9 @@ const turso = createClient({
   org: process.env.TURSO_ORGANIZATION_SLUG!,
   token: process.env.TURSO_PLATFORM_API_TOKEN!,
 });
-
-type Data =
-  | {
-      token: string;
-    }
-  | {
-      error: string;
-    };
-
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse
 ) {
   if (!ENABLED) {
     return res.status(403).json({ error: "Not allowed" });
@@ -64,5 +55,5 @@ export default async function handler(
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
-  return res.status(200).json({ token });
+  return res.status(200).json({ token, userId: user.id });
 }
